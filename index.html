@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="OmniCheck AI - Non-Invasive Multimodal Full-Body Health Diagnostics Suite using Camera PPG, Facial/Ocular Computer Vision, Audio Spectrograms, and Motor Telemetry.">
+    <meta name="keywords" content="health checkup, AI health diagnostic, camera PPG, heart rate variability, anemia scan, jaundice detection, voice hydration, hackathon">
+    <title>OmniCheck AI — Multimodal Full-Body Health Diagnostics Suite</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- Top Navigation / Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo-brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-heart-pulse logo-pulse"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>OmniCheck <span class="badge-ai">AI</span></h1>
+                    <span class="logo-subtext">Multimodal Non-Invasive Diagnostic Suite</span>
+                </div>
+            </div>
+            
+            <div class="header-status">
+                <div class="status-indicator">
+                    <span class="status-dot green"></span>
+                    <span class="status-label">Biometric Engine Active</span>
+                </div>
+                <div class="judge-mode-pill" id="judgeDemoPill">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Judge Demo Mode</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button class="btn btn-outline" id="btnJudgeDemo" title="Quickly test with pre-set clinical profiles">
+                    <i class="fa-solid fa-vial"></i> Live Demo Profiles
+                </button>
+                <button class="btn btn-primary" id="btnFullCheckup">
+                    <i class="fa-solid fa-play"></i> Start Full Body Scan
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="app-container">
+        
+        <!-- Quick Judge Profile Selector Banner (Hidden by default, toggled via button) -->
+        <div class="demo-profiles-banner" id="demoBanner" style="display: none;">
+            <div class="banner-header">
+                <i class="fa-solid fa-bolt banner-icon"></i>
+                <div>
+                    <h4>Instant Judge Demo Suite</h4>
+                    <p>Select a simulated clinical patient profile to test immediate non-invasive full-body diagnostic telemetry without camera permissions.</p>
+                </div>
+                <button class="btn-close" id="btnCloseDemoBanner">&times;</button>
+            </div>
+            <div class="profiles-grid">
+                <button class="profile-card" data-profile="athletic">
+                    <div class="profile-avatar green"><i class="fa-solid fa-user-ninja"></i></div>
+                    <div class="profile-info">
+                        <h5>Optimal Athlete</h5>
+                        <p>High HRV (78ms), SpO2 99%, Clear Vocal Acoustics, Balanced Motor</p>
+                    </div>
+                </button>
+                <button class="profile-card" data-profile="dehydrated_stress">
+                    <div class="profile-avatar amber"><i class="fa-solid fa-user-clock"></i></div>
+                    <div class="profile-info">
+                        <h5>Dehydration & High Stress</h5>
+                        <p>HRV 28ms, High Pitch Jitter (4.2%), Elevated BP Index, Fatigue</p>
+                    </div>
+                </button>
+                <button class="profile-card" data-profile="anemia_fatigue">
+                    <div class="profile-avatar red"><i class="fa-solid fa-user-doctor"></i></div>
+                    <div class="profile-info">
+                        <h5>Anemia & Low Hemoglobin</h5>
+                        <p>Conjunctiva Paleness, Sclera B/G Ratio alert, Low Oxygen Index</p>
+                    </div>
+                </button>
+                <button class="profile-card" data-profile="respiratory_wheeze">
+                    <div class="profile-avatar violet"><i class="fa-solid fa-lungs"></i></div>
+                    <div class="profile-info">
+                        <h5>Bronchial Wheeze / Cough</h5>
+                        <p>Resonance Acoustic Peak @ 850Hz, Respiratory Rate 24 BPM</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- 5-Organ Health Scorecard Top Bar -->
+        <section class="scorecard-section">
+            <div class="scorecard-header">
+                <h3><i class="fa-solid fa-gauge-high"></i> Systemic Organ Health Telemetry</h3>
+                <div class="scorecard-timestamp" id="lastUpdatedTime">Scan Status: Awaiting Initialization</div>
+            </div>
+            
+            <div class="organ-cards-grid">
+                <!-- Card 1: Cardiovascular -->
+                <div class="organ-card" id="cardCardio">
+                    <div class="organ-header">
+                        <div class="organ-icon cardio"><i class="fa-solid fa-heart-pulse"></i></div>
+                        <div class="organ-title">
+                            <h4>Cardiovascular</h4>
+                            <span class="organ-subtitle">PPG Pulse & HRV</span>
+                        </div>
+                        <div class="organ-score" id="scoreCardio">--</div>
+                    </div>
+                    <div class="organ-body">
+                        <div class="metric-row"><span>Heart Rate:</span> <strong id="valBpm">-- BPM</strong></div>
+                        <div class="metric-row"><span>HRV (RMSSD):</span> <strong id="valHrv">-- ms</strong></div>
+                        <div class="metric-row"><span>Est. Blood Pressure:</span> <strong id="valBp">--/-- mmHg</strong></div>
+                    </div>
+                    <div class="organ-progress-bar"><div class="progress-fill cardio" id="barCardio" style="width: 0%"></div></div>
+                </div>
+
+                <!-- Card 2: Ocular & Metabolic -->
+                <div class="organ-card" id="cardOcular">
+                    <div class="organ-header">
+                        <div class="organ-icon ocular"><i class="fa-solid fa-eye"></i></div>
+                        <div class="organ-title">
+                            <h4>Ocular & Metabolic</h4>
+                            <span class="organ-subtitle">Hemoglobin & Bilirubin</span>
+                        </div>
+                        <div class="organ-score" id="scoreOcular">--</div>
+                    </div>
+                    <div class="organ-body">
+                        <div class="metric-row"><span>Anemia (Hemoglobin):</span> <strong id="valHemoglobin">-- g/dL</strong></div>
+                        <div class="metric-row"><span>Jaundice (Sclera B/G):</span> <strong id="valBilirubin">Normal</strong></div>
+                        <div class="metric-row"><span>Facial Symmetry:</span> <strong id="valSymmetry">--%</strong></div>
+                    </div>
+                    <div class="organ-progress-bar"><div class="progress-fill ocular" id="barOcular" style="width: 0%"></div></div>
+                </div>
+
+                <!-- Card 3: Respiratory & Vocal -->
+                <div class="organ-card" id="cardRespiratory">
+                    <div class="organ-header">
+                        <div class="organ-icon respiratory"><i class="fa-solid fa-lungs"></i></div>
+                        <div class="organ-title">
+                            <h4>Respiratory & Vocal</h4>
+                            <span class="organ-subtitle">Acoustic Spectrogram</span>
+                        </div>
+                        <div class="organ-score" id="scoreRespiratory">--</div>
+                    </div>
+                    <div class="organ-body">
+                        <div class="metric-row"><span>Vocal Cord Hydration:</span> <strong id="valHydration">--%</strong></div>
+                        <div class="metric-row"><span>Acoustic Jitter:</span> <strong id="valJitter">--%</strong></div>
+                        <div class="metric-row"><span>Respiratory Rate:</span> <strong id="valRespRate">-- BPM</strong></div>
+                    </div>
+                    <div class="organ-progress-bar"><div class="progress-fill respiratory" id="barRespiratory" style="width: 0%"></div></div>
+                </div>
+
+                <!-- Card 4: Neurological Motor -->
+                <div class="organ-card" id="cardMotor">
+                    <div class="organ-header">
+                        <div class="organ-icon motor"><i class="fa-solid fa-brain"></i></div>
+                        <div class="organ-title">
+                            <h4>Neurological Motor</h4>
+                            <span class="organ-subtitle">Dexterity & Reaction</span>
+                        </div>
+                        <div class="organ-score" id="scoreMotor">--</div>
+                    </div>
+                    <div class="organ-body">
+                        <div class="metric-row"><span>Tapping Speed:</span> <strong id="valTapSpeed">-- TPS</strong></div>
+                        <div class="metric-row"><span>Cadence Stability:</span> <strong id="valCadence">--%</strong></div>
+                        <div class="metric-row"><span>Reaction Latency:</span> <strong id="valReaction">-- ms</strong></div>
+                    </div>
+                    <div class="organ-progress-bar"><div class="progress-fill motor" id="barMotor" style="width: 0%"></div></div>
+                </div>
+
+                <!-- Card 5: Overall Health Index -->
+                <div class="organ-card highlight-card" id="cardOverall">
+                    <div class="organ-header">
+                        <div class="organ-icon overall"><i class="fa-solid fa-shield-heart"></i></div>
+                        <div class="organ-title">
+                            <h4>Full-Body Health Index</h4>
+                            <span class="organ-subtitle">Unified Biomarker Score</span>
+                        </div>
+                        <div class="organ-score overall-score" id="scoreOverall">--</div>
+                    </div>
+                    <div class="organ-body">
+                        <div class="health-status-badge" id="badgeHealthStatus">Scan Required</div>
+                        <p class="health-summary-text" id="textHealthSummary">Initialize scan modules below or run Judge Demo mode to calculate full body diagnostic analysis.</p>
+                    </div>
+                    <button class="btn btn-sm btn-report" id="btnViewReport" disabled>
+                        <i class="fa-solid fa-file-medical"></i> View Clinical Report
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Diagnostic Workspace Tabs & Interactive Scanner Viewport -->
+        <section class="workspace-section">
+            
+            <!-- Navigation Tabs -->
+            <nav class="diagnostic-nav">
+                <button class="nav-tab active" data-tab="ppg">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                    <span>1. Cardio PPG Scan</span>
+                </button>
+                <button class="nav-tab" data-tab="vision">
+                    <i class="fa-solid fa-eye"></i>
+                    <span>2. Ocular & Face Scan</span>
+                </button>
+                <button class="nav-tab" data-tab="audio">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                    <span>3. Vocal & Respiratory</span>
+                </button>
+                <button class="nav-tab" data-tab="motor">
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <span>4. Motor Dexterity</span>
+                </button>
+                <button class="nav-tab" data-tab="summary">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>5. Diagnostic Radar</span>
+                </button>
+            </nav>
+
+            <!-- Diagnostic Content Panels -->
+            <div class="tab-content-container">
+
+                <!-- PANEL 1: PPG CARDIO SCANNER -->
+                <div class="tab-panel active" id="panel-ppg">
+                    <div class="scanner-layout">
+                        <div class="viewport-box">
+                            <div class="hud-overlay">
+                                <div class="hud-corner top-left"></div>
+                                <div class="hud-corner top-right"></div>
+                                <div class="hud-corner bottom-left"></div>
+                                <div class="hud-corner bottom-right"></div>
+                                
+                                <div class="hud-scanner-ring" id="ppgRing">
+                                    <i class="fa-solid fa-fingerprint pulse-fingerprint"></i>
+                                </div>
+                                <div class="hud-instruction" id="ppgInstruction">
+                                    Place fingertip gently over rear camera with flash ON, or click "Start Sensor Acquisition".
+                                </div>
+                            </div>
+                            <!-- Video feed / Canvas overlay -->
+                            <video id="videoPpg" autoplay playsinline muted style="display: none;"></video>
+                            <canvas id="canvasPpgWave" class="waveform-canvas"></canvas>
+                        </div>
+
+                        <div class="control-sidebar">
+                            <div class="sidebar-card">
+                                <h4><i class="fa-solid fa-sliders"></i> Sensor Controls</h4>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-block" id="btnStartPpg">
+                                        <i class="fa-solid fa-play"></i> Start Camera PPG
+                                    </button>
+                                    <button class="btn btn-outline btn-block" id="btnSimulatePpg">
+                                        <i class="fa-solid fa-wave-square"></i> Simulate Signal Wave
+                                    </button>
+                                </div>
+                                <div class="scan-progress-wrapper" style="margin-top: 15px;">
+                                    <div class="scan-progress-label">
+                                        <span>Scan Progress</span>
+                                        <span id="ppgProgressPercent">0%</span>
+                                    </div>
+                                    <div class="progress-bar"><div class="progress-fill" id="ppgProgressBar" style="width: 0%"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-card metrics-card">
+                                <h4><i class="fa-solid fa-chart-line"></i> Real-Time Telemetry</h4>
+                                <div class="telemetry-grid">
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Heart Rate</span>
+                                        <span class="telemetry-val" id="ppgLiveBpm">-- <small>BPM</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">HRV (RMSSD)</span>
+                                        <span class="telemetry-val" id="ppgLiveHrv">-- <small>ms</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Est. SpO2</span>
+                                        <span class="telemetry-val" id="ppgLiveSpo2">-- <small>%</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Stress Index</span>
+                                        <span class="telemetry-val" id="ppgLiveStress">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 2: OCULAR & FACIAL VISION SCANNER -->
+                <div class="tab-panel" id="panel-vision">
+                    <div class="scanner-layout">
+                        <div class="viewport-box">
+                            <div class="hud-overlay">
+                                <div class="hud-reticle face-reticle" id="faceReticle">
+                                    <div class="eye-box left-eye"></div>
+                                    <div class="eye-box right-eye"></div>
+                                </div>
+                                <div class="hud-instruction" id="faceInstruction">
+                                    Align face within crosshairs. Scan checks Sclera Bilirubin (Jaundice) & Eyelid Hemoglobin (Anemia).
+                                </div>
+                            </div>
+                            <video id="videoFace" autoplay playsinline muted style="display: none;"></video>
+                            <canvas id="canvasFaceOverlay" class="waveform-canvas"></canvas>
+                        </div>
+
+                        <div class="control-sidebar">
+                            <div class="sidebar-card">
+                                <h4><i class="fa-solid fa-camera"></i> Vision Controls</h4>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-block" id="btnStartFace">
+                                        <i class="fa-solid fa-video"></i> Start Camera Scan
+                                    </button>
+                                    <button class="btn btn-outline btn-block" id="btnSimulateFace">
+                                        <i class="fa-solid fa-eye-dropper"></i> Simulate Vision Scan
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-card metrics-card">
+                                <h4><i class="fa-solid fa-microscope"></i> Optical Analysis</h4>
+                                <div class="analysis-list">
+                                    <div class="analysis-box">
+                                        <div class="box-title">Conjunctival Hemoglobin (Anemia)</div>
+                                        <div class="box-value" id="valPaleness">Normal (14.2 g/dL)</div>
+                                        <div class="box-bar"><div class="bar-fill green" id="barPaleness" style="width: 85%"></div></div>
+                                    </div>
+                                    <div class="analysis-box">
+                                        <div class="box-title">Sclera Bilirubin (Jaundice)</div>
+                                        <div class="box-value" id="valSclera">Normal B/G Ratio</div>
+                                        <div class="box-bar"><div class="bar-fill green" id="barSclera" style="width: 92%"></div></div>
+                                    </div>
+                                    <div class="analysis-box">
+                                        <div class="box-title">Facial Symmetry (Cranial Motor)</div>
+                                        <div class="box-value" id="valFaceSymmetry">98.4% Symmetrical</div>
+                                        <div class="box-bar"><div class="bar-fill green" id="barFaceSymmetry" style="width: 98%"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 3: VOCAL & RESPIRATORY ACOUSTIC SCANNER -->
+                <div class="tab-panel" id="panel-audio">
+                    <div class="scanner-layout">
+                        <div class="viewport-box">
+                            <div class="hud-overlay">
+                                <div class="hud-instruction" id="audioInstruction">
+                                    Hold a clear "AHHH" sound into microphone for 5 seconds to analyze vocal fold hydration & acoustics.
+                                </div>
+                            </div>
+                            <canvas id="canvasAudioSpectrogram" class="waveform-canvas"></canvas>
+                        </div>
+
+                        <div class="control-sidebar">
+                            <div class="sidebar-card">
+                                <h4><i class="fa-solid fa-microphone"></i> Audio Controls</h4>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-block" id="btnStartAudio">
+                                        <i class="fa-solid fa-record-vinyl"></i> Record 5-Sec "AHHH"
+                                    </button>
+                                    <button class="btn btn-outline btn-block" id="btnSimulateAudio">
+                                        <i class="fa-solid fa-file-audio"></i> Simulate Vocal Audio
+                                    </button>
+                                </div>
+                                <div class="audio-timer" id="audioTimer">0.0s / 5.0s</div>
+                            </div>
+
+                            <div class="sidebar-card metrics-card">
+                                <h4><i class="fa-solid fa-wave-square"></i> Acoustic Biomarkers</h4>
+                                <div class="telemetry-grid">
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Pitch Jitter</span>
+                                        <span class="telemetry-val" id="audioJitter">-- <small>%</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Amplitude Shimmer</span>
+                                        <span class="telemetry-val" id="audioShimmer">-- <small>%</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Harmonics/Noise</span>
+                                        <span class="telemetry-val" id="audioHnr">-- <small>dB</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Hydration Rating</span>
+                                        <span class="telemetry-val" id="audioHydration">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 4: MOTOR DEXTERITY TEST -->
+                <div class="tab-panel" id="panel-motor">
+                    <div class="scanner-layout">
+                        <div class="viewport-box tap-test-viewport" id="tapTestArea">
+                            <div class="tap-target-circle" id="tapTarget">
+                                <i class="fa-solid fa-hand-pointer"></i>
+                                <span>TAP HERE FAST!</span>
+                            </div>
+                            <canvas id="canvasMotorTrace" class="waveform-canvas"></canvas>
+                        </div>
+
+                        <div class="control-sidebar">
+                            <div class="sidebar-card">
+                                <h4><i class="fa-solid fa-stopwatch"></i> Motor Cadence Test</h4>
+                                <p class="sidebar-desc">Tap the pulsating target rapidly for 10 seconds to evaluate motor speed decay & tremor stability.</p>
+                                <div class="btn-group">
+                                    <button class="btn btn-primary btn-block" id="btnStartMotor">
+                                        <i class="fa-solid fa-play"></i> Start 10-Sec Tap Test
+                                    </button>
+                                    <button class="btn btn-outline btn-block" id="btnSimulateMotor">
+                                        <i class="fa-solid fa-bolt"></i> Simulate Motor Test
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-card metrics-card">
+                                <h4><i class="fa-solid fa-chart-bar"></i> Motor Metrics</h4>
+                                <div class="telemetry-grid">
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Total Taps</span>
+                                        <span class="telemetry-val" id="motorTapCount">0</span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Taps Per Sec</span>
+                                        <span class="telemetry-val" id="motorTps">-- <small>TPS</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Frequency Decay</span>
+                                        <span class="telemetry-val" id="motorDecay">-- <small>%</small></span>
+                                    </div>
+                                    <div class="telemetry-item">
+                                        <span class="telemetry-label">Dexterity Index</span>
+                                        <span class="telemetry-val" id="motorDexterity">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL 5: DIAGNOSTIC RADAR & SYSTEMIC OVERVIEW -->
+                <div class="tab-panel" id="panel-summary">
+                    <div class="summary-layout">
+                        <div class="radar-box">
+                            <h4><i class="fa-solid fa-chart-radar"></i> 5-Organ System Biometric Radar</h4>
+                            <canvas id="canvasRadar" width="450" height="380"></canvas>
+                        </div>
+
+                        <div class="summary-details">
+                            <div class="summary-card">
+                                <h4><i class="fa-solid fa-clipboard-check"></i> Systemic Health Assessment</h4>
+                                <div class="assessment-content" id="assessmentContent">
+                                    <p>Complete individual scan modules to generate dynamic radar breakdown.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-card">
+                                <h4><i class="fa-solid fa-lightbulb"></i> Clinical Guidance & Triage</h4>
+                                <ul class="guidance-list" id="guidanceList">
+                                    <li><i class="fa-solid fa-check text-green"></i> Cardiovascular stability check</li>
+                                    <li><i class="fa-solid fa-check text-green"></i> Ocular bilirubin & hemoglobin clearance</li>
+                                    <li><i class="fa-solid fa-check text-green"></i> Vocal fold mucosal acoustic check</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Printable / Interactive Clinical Report Modal -->
+    <div class="modal-overlay" id="modalReport">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-file-medical"></i>
+                    <h2>OmniCheck AI — Clinical Health Telemetry Summary</h2>
+                </div>
+                <button class="btn-close" id="btnCloseReport">&times;</button>
+            </div>
+            
+            <div class="modal-body printable-report" id="printableReportContent">
+                <!-- Dynamic Report HTML generated via JS -->
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnPrintReport">
+                    <i class="fa-solid fa-print"></i> Print / Download PDF
+                </button>
+                <button class="btn btn-primary" id="btnCloseReportBtn">Close Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 OmniCheck AI. Created for International Health Hackathon. Powered by Client-Side WebGPU & Web Audio Signal Processing.</p>
+            <p class="disclaimer"><i class="fa-solid fa-triangle-exclamation"></i> Triage Disclaimer: OmniCheck AI provides non-invasive biometric telemetry screening and does not constitute formal medical diagnosis.</p>
+        </div>
+    </footer>
+
+    <!-- Application JavaScript Modules -->
+    <script src="js/simulationData.js"></script>
+    <script src="js/ppgScanner.js"></script>
+    <script src="js/faceScanner.js"></script>
+    <script src="js/audioScanner.js"></script>
+    <script src="js/motorScanner.js"></script>
+    <script src="js/reportGenerator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
